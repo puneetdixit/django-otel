@@ -1,0 +1,7 @@
+django
+opentelemetry-sdk
+opentelemetry-instrumentation
+opentelemetry-instrumentation-django
+opentelemetry-exporter-jaeger
+opentelemetry-exporter-prometheus
+prometheus-client
