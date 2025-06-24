@@ -18,18 +18,16 @@ from django.contrib import admin
 from django.urls import path
 from django.http import JsonResponse, HttpResponse
 import time
+import requests
+import random
 
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST, Counter, Histogram
+from django_otel.metrics import REQUEST_COUNT, REQUEST_LATENCY
 
-REQUEST_COUNT = Counter(
-    'app_request_count', 'Total HTTP Requests',
-    ['method', 'endpoint']
-)
-
-REQUEST_LATENCY = Histogram(
-    'app_request_latency_seconds', 'Request latency',
-    ['endpoint']
-)
+def wait(seconds: float = None):
+    if not seconds:
+        seconds = random.random()
+    time.sleep(seconds)
 
 def metrics_view(request):
     return HttpResponse(generate_latest(), content_type=CONTENT_TYPE_LATEST)
@@ -37,18 +35,29 @@ def metrics_view(request):
 
 def hello_view(request):
     REQUEST_COUNT.labels(method='GET', endpoint='/').inc()
-    with REQUEST_LATENCY.labels(endpoint='/').time():
-        time.sleep(1)
+    wait()
     return JsonResponse({"message": "Hello, OpenTelemetry from Django!"})
 
-def hello_view2(request):
-    time.sleep(2)
-    return JsonResponse({"message": "Hello, OpenTelemetry from Django!2"})
+def test_view(request):
+    REQUEST_COUNT.labels(method='GET', endpoint='/test').inc()
+    data = {
+        "inputCode": "Function to calculate area",
+        "language":  "python"
+    }
+    wait(0.2)
+    response = requests.post("https://codeapi.puneetdixit.in/ai-response", json=data, verify=False)
+    return JsonResponse({"message": "Hello, OpenTelemetry from Django!2", "response": response.json()})
+
+def test2(request):
+    REQUEST_COUNT.labels(method='GET', endpoint='/test-2').inc()
+    result = 10/something  # Throwing error
+    return JsonResponse({"message": "Hello, OpenTelemetry from Django!"})
 
 
 urlpatterns = [
     path('', hello_view),
-    path('test', hello_view2),
+    path('test', test_view),
+    path('test2', test2),
     path('metrics/', metrics_view),
     path('admin/', admin.site.urls),
 ]
