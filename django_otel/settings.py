@@ -15,21 +15,12 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
+# Security
 SECRET_KEY = 'django-insecure-fl$_hc%x!oml7(&*)z9t*+garmb@dd#s-wy(o0tns)*)a$#^x2'
-
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+ALLOWED_HOSTS = ['*']
 
-ALLOWED_HOSTS = []
-
-
-# Application definition
-
+# Applications
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -79,52 +70,29 @@ DATABASES = {
     }
 }
 
-
 # Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-
 # Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
-
+# Static files
 STATIC_URL = 'static/'
 
 # Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
-# --- OpenTelemetry Integration ---
-from prometheus_client import start_http_server
+# --- OpenTelemetry Integration (Tracing + Metrics) ---
 from opentelemetry.instrumentation.django import DjangoInstrumentor
+from opentelemetry.instrumentation.requests import RequestsInstrumentor
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -134,9 +102,14 @@ from opentelemetry.exporter.prometheus import PrometheusMetricReader
 from opentelemetry.trace import set_tracer_provider
 from opentelemetry.metrics import set_meter_provider
 
+# Instrument Django for tracing
 DjangoInstrumentor().instrument()
+RequestsInstrumentor().instrument()
 
-trace_provider = TracerProvider(resource=Resource.create({SERVICE_NAME: "django-otel"}))
+# Setup Tracing
+trace_provider = TracerProvider(
+    resource=Resource.create({SERVICE_NAME: "django-otel"})
+)
 trace_provider.add_span_processor(
     BatchSpanProcessor(
         JaegerExporter(agent_host_name='localhost', agent_port=6831)
@@ -144,7 +117,7 @@ trace_provider.add_span_processor(
 )
 set_tracer_provider(trace_provider)
 
+# Setup Metrics (no start_http_server needed, metrics served at /metrics)
 prometheus_reader = PrometheusMetricReader()
 meter_provider = MeterProvider(metric_readers=[prometheus_reader])
 set_meter_provider(meter_provider)
-start_http_server(port=8001)
