@@ -12,7 +12,7 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.exporter.prometheus import PrometheusMetricReader
-
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 # Resource describing the service
 resource = Resource(attributes={"service.name": "flask-microservice"})
 
@@ -49,7 +49,7 @@ def home():
 
 @app.route("/metrics")
 def metrics_view():
-    return reader.render_metric_page()
+    return generate_latest(), 200, {'Content-Type': CONTENT_TYPE_LATEST}
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)
