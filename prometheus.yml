@@ -5,3 +5,6 @@ scrape_configs:
   - job_name: 'django'
     static_configs:
       - targets: ['host.docker.internal:8000']
+  - job_name: 'flask'
+    static_configs:
+      - targets: ['host.docker.internal:500']

@@ -21,8 +21,7 @@ import time
 import requests
 import random
 
-from prometheus_client import generate_latest, CONTENT_TYPE_LATEST, Counter, Histogram
-from django_otel.metrics import REQUEST_COUNT, REQUEST_LATENCY
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 
 def wait(seconds: float = None):
     if not seconds:
@@ -34,12 +33,10 @@ def metrics_view(request):
 
 
 def hello_view(request):
-    REQUEST_COUNT.labels(method='GET', endpoint='/').inc()
     wait()
     return JsonResponse({"message": "Hello, OpenTelemetry from Django!"})
 
 def test_view(request):
-    REQUEST_COUNT.labels(method='GET', endpoint='/test').inc()
     data = {
         "inputCode": "Function to calculate area",
         "language":  "python"
@@ -49,7 +46,6 @@ def test_view(request):
     return JsonResponse({"message": "Hello, OpenTelemetry from Django!2", "response": response.json()})
 
 def test2(request):
-    REQUEST_COUNT.labels(method='GET', endpoint='/test-2').inc()
     result = 10/something  # Throwing error
     return JsonResponse({"message": "Hello, OpenTelemetry from Django!"})
 
